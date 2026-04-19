@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.time.LocalTime;
 import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
@@ -24,16 +25,7 @@ private Button login;
 private EditText username;
 private EditText password;
 
-
-    byte[] ping = {0x02};
-    byte pong = 0x03;
-    byte[] message = new byte[] {
-            (byte)0x04,
-
-    };
-
-
-
+Protocols p = new Protocols();
 
 MyThread myThread;
     @Override
@@ -60,7 +52,7 @@ MyThread myThread;
         byte[] timestamp = new byte[8];
         byte[] payloadLength = new byte[2];
         byte[] readPayloadLength = new byte[3];
-        ByteBuffer handshakeBuffer = ByteBuffer.allocate(1+2+1+1);
+        ByteBuffer handshakeBuffer;
         int messageLength;
 
         @Override
@@ -71,20 +63,19 @@ MyThread myThread;
                 DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
                 DataInputStream dis = new DataInputStream(socket.getInputStream());
                 Log.i("Connection", String.valueOf(dis.available()));
+
                 dis.readFully(readPayloadLength, 0, 3);
                 Log.i("Payload Length", ((Arrays.toString(readPayloadLength))));
                 packetType = readPayloadLength[0];
                 payloadLength[0] = readPayloadLength[1];
                 payloadLength[1] = readPayloadLength[2];
                 Log.i("Packet Type", String.valueOf((packetType)));
-                int payloadLengthInt = ((int)readPayloadLength[0])-1 + (256*(int)readPayloadLength[1]);
+                int payloadLengthInt = 2;
                 byte[] readPayload = new byte[payloadLengthInt];
                 dis.readFully(readPayload, 0, payloadLengthInt);
                 Log.i("Handshake Payload",(Arrays.toString(readPayload)));
-                handshakeBuffer.put((byte)0x03);
-                handshakeBuffer.putShort((short)2);
-                handshakeBuffer.put((byte)0x00);
-                handshakeBuffer.put((byte)0x01);
+
+                handshakeBuffer = p.getHandshake();
                 dos.write(handshakeBuffer.array());
                 String login = "Jakub123";
                 String pass = "valid";
@@ -101,44 +92,61 @@ MyThread myThread;
                     Log.i("auth Authentication" + i, String.valueOf(AuthBuffer.get()));
                 }
                 dos.write(AuthBuffer.array());
-
                 Log.i("After Authentication", String.valueOf(dis.available()));
                 Log.i("Authentication",("Authentication send"));
 
-
-
-
                 while(true){
-                   /* synchronized (this){
-                        try {
-                            this.wait(5000);
-                            Log.i("Avaible", String.valueOf(dis.available()));
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }*/
-                    if(dis.available()!=0) {
-                        Log.i("PacketType", String.valueOf(packetType = dis.readByte()));
-                        if(packetType == 0x05) {
-                            Log.i("Avaible", String.valueOf(dis.available()));
-                            byte[] readUsers = new byte[2];
-                            byte[] readMessageLength = new byte[4];
-                            dis.readFully(readUsers, 0, 2);
-                            dis.readFully(readMessageLength, 0, 4);
-                            for (byte b : readMessageLength) {
-                                messageLength = (messageLength << 8) + (b & 0xFF);
-                            }
-                            byte[] readMessage = new byte[messageLength];
-                            dis.readFully(readMessage, 0, messageLength);
-                            Log.i("Message", Arrays.toString(readMessage));
-                        }else if(packetType == 0x01){
-                            byte[] successRead = new byte[2];
-                            dis.readFully(successRead,0,2);
-                            Log.i("Success", Arrays.toString(successRead));
-                        }
-                        }
+                      if (dis.available() != 0) {
+                          packetType = dis.readByte();
+                          if (packetType == 0x05) {
+                              Log.i("Avaible", String.valueOf(dis.available()));
+                              byte[] readAllLength = new byte[2];
+                              dis.readFully(readAllLength, 0, 2);
+                              Log.i("Avaible", Arrays.toString(readAllLength));
+                              byte[] readSenderLength = new byte[2];
+                              dis.readFully(readSenderLength, 0, 2);
+                              int readSenderLengthInt = p.decodeBytesToInt(readSenderLength);
+                              byte[] readSender = new byte[readSenderLengthInt];
+                              dis.readFully(readSender, 0, readSenderLengthInt);
+                              String Sender = p.decodeBytesToString(readSender);
+                              Log.i("Sender", Sender);
 
-                   }
+                              byte[] readTargetLength = new byte[2];
+                              dis.readFully(readTargetLength, 0, 2);
+                              int readTargetLengthInt = p.decodeBytesToInt(readTargetLength);
+                              byte[] readTarget = new byte[readTargetLengthInt];
+                              dis.readFully(readTarget, 0, readTargetLengthInt);
+                              String Target = p.decodeBytesToString(readTarget);
+                              Log.i("Target", Target);
+                              Log.i("ava", String.valueOf(dis.available()));
+
+
+                              byte[] readTimestampLength = new byte[8];
+                              dis.readFully(readTimestampLength, 0, 8);
+                              Log.i("ava", String.valueOf(dis.available()));
+                              Log.i("ava", Arrays.toString(readTimestampLength));
+                              //byte[] readTimestamp = new byte[10];
+                              //dis.readFully(readTimestamp, 0, 10);
+                              //String Timestamp = p.decodeBytesToString(readTimestamp);
+                              //Log.i("Timestamp", Timestamp);
+
+                              byte[] readMessageLength = new byte[2];
+                              dis.readFully(readMessageLength, 0, 2);
+                              int readMessageLengthInt = p.decodeBytesToInt(readMessageLength);
+                              Log.i("len", String.valueOf(readMessageLengthInt));
+                              byte[] readMessage = new byte[readMessageLengthInt];
+                              dis.readFully(readMessage, 0, readMessageLengthInt);
+                              String Message = p.decodeBytesToString(readMessage);
+                              Log.i("Message", Message);
+
+                          } else if (packetType == 0x01) {
+                              byte[] successRead = new byte[2];
+                              dis.readFully(successRead, 0, 2);
+                              Log.i("Success", Arrays.toString(successRead));
+                          }
+                      }
+                }
+
 
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -152,8 +160,8 @@ MyThread myThread;
             this.code = code;
             try {
                 OutputStream dos = socket.getOutputStream();
+                Log.i("buffer", String.valueOf(code));
                 dos.write(code.array());
-                dos.flush();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -163,15 +171,19 @@ MyThread myThread;
 
 
    public void sendMessageButton(View v) {
-       String message = "Solec Kujawski jest top";
-       String myUser = "Jakub123";
-       String userToSend = "user3";
-       String users = String.join(myUser,userToSend);
-       ByteBuffer messageBuffer = ByteBuffer.allocate(1 + 2 + 8 + message.length());
-       messageBuffer.put((byte)0x05);
-      // messageBuffer.putChar((char)users);
-       messageBuffer.putDouble((byte)message.length());
-       messageBuffer.put(message.getBytes());
+       String content = "SolecKujawskijesttop";
+       String myUser = "Jakub123@localhost";
+       String userToSend = "user2@localhost:9999";
+       ByteBuffer contentBuffer = p.encodeString(content);
+       ByteBuffer myUserBuffer = p.encodeString(myUser);
+       ByteBuffer userToSendBuffer = p.encodeString(userToSend);
+       contentBuffer.rewind();
+       myUserBuffer.rewind();
+       userToSendBuffer.rewind();
+       ByteBuffer messageBuffer = p.getMessage(myUserBuffer,userToSendBuffer,contentBuffer);
+       messageBuffer.rewind();
+       Log.i("buffer", String.valueOf(messageBuffer));
+       myThread.sendMessage(messageBuffer);
    }
 
 
