@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package com.solec.myapplication;
 
 import android.os.Bundle;
 import android.os.StrictMode;
@@ -7,16 +7,13 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
-
 import androidx.appcompat.app.AppCompatActivity;
 
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PushbackInputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -37,6 +34,7 @@ private EditText password;
 
 
 
+
 MyThread myThread;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +52,7 @@ MyThread myThread;
 
     private static class MyThread implements Runnable {
         ByteBuffer code;
+        Protocols p = new Protocols();
 
         Socket socket;
 
@@ -87,31 +86,41 @@ MyThread myThread;
                 handshakeBuffer.put((byte)0x00);
                 handshakeBuffer.put((byte)0x01);
                 dos.write(handshakeBuffer.array());
-                String login = "Jakub";
+                String login = "Jakub123";
                 String pass = "valid";
-                String auth = String.join("",login,pass);
-                ByteBuffer AuthBuffer = ByteBuffer.allocate(1+2+auth.length());
-                AuthBuffer.put((byte)0x04);
-                AuthBuffer.putShort((short)auth.length());
-                AuthBuffer.put(auth.getBytes());
+                ByteBuffer loginBuffer = p.encodeString(login);
+                ByteBuffer passBuffer = p.encodeString(pass);
+                loginBuffer.rewind();
+                passBuffer.rewind();
+                ByteBuffer AuthBuffer = p.getAuth(loginBuffer,passBuffer);
+                AuthBuffer.rewind();
+                Log.i("login Authentication", String.valueOf(loginBuffer));
+                Log.i("pass Authentication", String.valueOf(passBuffer ));
+                Log.i("auth Authentication", String.valueOf(AuthBuffer));
+                for(int i=0; i<AuthBuffer.limit();i++){
+                    Log.i("auth Authentication" + i, String.valueOf(AuthBuffer.get()));
+                }
                 dos.write(AuthBuffer.array());
+
                 Log.i("After Authentication", String.valueOf(dis.available()));
                 Log.i("Authentication",("Authentication send"));
 
 
 
+
                 while(true){
-                    synchronized (this){
+                   /* synchronized (this){
                         try {
-                            this.wait(1000);
-                            Log.i("Ava", String.valueOf(dis.available()));
+                            this.wait(5000);
+                            Log.i("Avaible", String.valueOf(dis.available()));
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
-                    }
+                    }*/
                     if(dis.available()!=0) {
-                        packetType = dis.readByte();
-                        Log.i("Avaible", String.valueOf(dis.available()));
+                        Log.i("PacketType", String.valueOf(packetType = dis.readByte()));
+                        if(packetType == 0x05) {
+                            Log.i("Avaible", String.valueOf(dis.available()));
                             byte[] readUsers = new byte[2];
                             byte[] readMessageLength = new byte[4];
                             dis.readFully(readUsers, 0, 2);
@@ -122,9 +131,14 @@ MyThread myThread;
                             byte[] readMessage = new byte[messageLength];
                             dis.readFully(readMessage, 0, messageLength);
                             Log.i("Message", Arrays.toString(readMessage));
+                        }else if(packetType == 0x01){
+                            byte[] successRead = new byte[2];
+                            dis.readFully(successRead,0,2);
+                            Log.i("Success", Arrays.toString(successRead));
+                        }
                         }
 
-                    }
+                   }
 
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -150,7 +164,7 @@ MyThread myThread;
 
    public void sendMessageButton(View v) {
        String message = "Solec Kujawski jest top";
-       String myUser = "Jakub";
+       String myUser = "Jakub123";
        String userToSend = "user3";
        String users = String.join(myUser,userToSend);
        ByteBuffer messageBuffer = ByteBuffer.allocate(1 + 2 + 8 + message.length());
