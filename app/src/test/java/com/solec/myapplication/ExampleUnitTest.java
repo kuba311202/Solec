@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package com.solec.myapplication;
 
 import org.junit.Test;
 
