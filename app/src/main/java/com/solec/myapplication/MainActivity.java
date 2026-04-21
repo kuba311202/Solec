@@ -1,11 +1,13 @@
 package com.solec.myapplication;
 
 import android.os.Bundle;
+import android.os.Message;
 import android.os.StrictMode;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -14,6 +16,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Array;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.time.LocalTime;
@@ -24,8 +27,14 @@ private Button login;
 
 private EditText username;
 private EditText password;
-
+private EditText message;
+private TextView messageLog;
+private TextView showUsername;
 Protocols p = new Protocols();
+String[] log = new String[10];
+int logCounter = 0;
+
+
 
 MyThread myThread;
     @Override
@@ -34,20 +43,27 @@ MyThread myThread;
         setContentView(R.layout.activity_main);
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
+        username = findViewById(R.id.Username);
+        password = findViewById(R.id.Password);
         }
 
     public void changeLayoutAfterLogin(View view){
+
         myThread = new MyThread();
         new Thread(myThread).start();
         setContentView(R.layout.after_login);
+        message = findViewById(R.id.Message);
+        messageLog = findViewById(R.id.MessageLog);
+        //showUsername = findViewById(R.id.ShowUsername);
     }
 
-    private static class MyThread implements Runnable {
+    private class MyThread implements Runnable {
         ByteBuffer code;
         Protocols p = new Protocols();
 
         Socket socket;
-
+        String pass;
+        String login;
         byte packetType;
         byte[] payloadLength = new byte[2];
         byte[] readPayloadLength = new byte[3];
@@ -61,14 +77,9 @@ MyThread myThread;
                 Log.i("Connection", ("Connected to server"));
                 DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
                 DataInputStream dis = new DataInputStream(socket.getInputStream());
-                Log.i("Connection", String.valueOf(dis.available()));
+                Log.i("Avaible after connection", String.valueOf(dis.available()));
 
                 dis.readFully(readPayloadLength, 0, 3);
-                Log.i("Payload Length", ((Arrays.toString(readPayloadLength))));
-                packetType = readPayloadLength[0];
-                payloadLength[0] = readPayloadLength[1];
-                payloadLength[1] = readPayloadLength[2];
-                Log.i("Packet Type", String.valueOf((packetType)));
                 int payloadLengthInt = 3;
                 byte[] readPayload = new byte[payloadLengthInt];
                 dis.readFully(readPayload, 0, payloadLengthInt);
@@ -76,23 +87,12 @@ MyThread myThread;
 
                 handshakeBuffer = p.getHandshake();
                 dos.write(handshakeBuffer.array());
-                String login = "Jakub123";
-                String pass = "valid";
-                ByteBuffer loginBuffer = p.encodeString(login);
-                ByteBuffer passBuffer = p.encodeString(pass);
-                loginBuffer.rewind();
-                passBuffer.rewind();
-                ByteBuffer AuthBuffer = p.getAuth(loginBuffer,passBuffer);
-                AuthBuffer.rewind();
-                Log.i("login Authentication", String.valueOf(loginBuffer));
-                Log.i("pass Authentication", String.valueOf(passBuffer ));
-                Log.i("auth Authentication", String.valueOf(AuthBuffer));
-                for(int i=0; i<AuthBuffer.limit();i++){
-                    Log.i("auth Authentication" + i, String.valueOf(AuthBuffer.get()));
-                }
-                dos.write(AuthBuffer.array());
-                Log.i("After Authentication", String.valueOf(dis.available()));
+
+                login = String.valueOf(username.getText());
+                pass = String.valueOf(password.getText());
+                dos.write(sendAuth(login,pass).array());
                 Log.i("Authentication",("Authentication send"));
+                Log.i("After Authentication", String.valueOf(dis.available()));
 
                 while(true){
                       if (dis.available() != 0) {
@@ -102,14 +102,12 @@ MyThread myThread;
                               Log.i("Avaible", String.valueOf(dis.available()));
                               byte[] readAllLength = new byte[2];
                               dis.readFully(readAllLength, 0, 2);
-                              Log.i("Avaible", Arrays.toString(readAllLength));
                               byte[] readSenderLength = new byte[2];
                               dis.readFully(readSenderLength, 0, 2);
                               int readSenderLengthInt = p.decodeBytesToInt(readSenderLength);
                               byte[] readSender = new byte[readSenderLengthInt];
                               dis.readFully(readSender, 0, readSenderLengthInt);
                               String Sender = p.decodeBytesToString(readSender);
-                              Log.i("Sender", Sender);
 
                               byte[] readTargetLength = new byte[2];
                               dis.readFully(readTargetLength, 0, 2);
@@ -120,11 +118,8 @@ MyThread myThread;
                               Log.i("Target", Target);
                               Log.i("ava", String.valueOf(dis.available()));
 
-
                               byte[] readTimestampLength = new byte[8];
                               dis.readFully(readTimestampLength, 0, 8);
-                              Log.i("ava", String.valueOf(dis.available()));
-                              Log.i("ava", Arrays.toString(readTimestampLength));
                               //byte[] readTimestamp = new byte[10];
                               //dis.readFully(readTimestamp, 0, 10);
                               //String Timestamp = p.decodeBytesToString(readTimestamp);
@@ -137,7 +132,7 @@ MyThread myThread;
                               byte[] readMessage = new byte[readMessageLengthInt];
                               dis.readFully(readMessage, 0, readMessageLengthInt);
                               String Message = p.decodeBytesToString(readMessage);
-                              Log.i("Message", Message);
+                              messageLog.setText(iterateLog(Sender + ":   " + Message + "\n\n"));
 
                           } else if (packetType == 0x01) {
                               byte[] successRead = new byte[2];
@@ -145,7 +140,7 @@ MyThread myThread;
                               Log.i("Success", Arrays.toString(successRead));
                           }
                           else if(packetType==0x00){
-                              Log.i("masz kurwa problem?","Chuj");
+
                           }
                       }
                 }
@@ -169,24 +164,62 @@ MyThread myThread;
                 throw new RuntimeException(e);
             }
         }
+
+
+        public ByteBuffer sendAuth(String login, String pass){
+            ByteBuffer loginBuffer = p.encodeString(login);
+            ByteBuffer passBuffer = p.encodeString(pass);
+            loginBuffer.rewind();
+            passBuffer.rewind();
+            ByteBuffer AuthBuffer = p.getAuth(loginBuffer,passBuffer);
+            AuthBuffer.rewind();
+            return AuthBuffer;
+        }
     }
 
 
 
    public void sendMessageButton(View v) {
-       String content = "SolecKujawskijesttop";
-       String myUser = "Jakub123@localhost";
-       String userToSend = "user2@localhost";
-       ByteBuffer contentBuffer = p.encodeString(content);
-       ByteBuffer myUserBuffer = p.encodeString(myUser);
-       ByteBuffer userToSendBuffer = p.encodeString(userToSend);
-       contentBuffer.rewind();
-       myUserBuffer.rewind();
-       userToSendBuffer.rewind();
-       ByteBuffer messageBuffer = p.getMessage(myUserBuffer,userToSendBuffer,contentBuffer);
-       messageBuffer.rewind();
-       Log.i("buffer", String.valueOf(messageBuffer));
-       myThread.sendMessage(messageBuffer);
+        String content = String.valueOf(message.getText());;
+        String myUser = myThread.login;
+        String userToSend = "user3@localhost";ByteBuffer contentBuffer = p.encodeString(content);
+        ByteBuffer myUserBuffer = p.encodeString(myUser);
+        ByteBuffer userToSendBuffer = p.encodeString(userToSend);
+        contentBuffer.rewind();
+        myUserBuffer.rewind();
+        userToSendBuffer.rewind();
+        ByteBuffer messageBuffer = p.getMessage(myUserBuffer,userToSendBuffer,contentBuffer);
+        messageBuffer.rewind();
+        messageLog.setText(iterateLog(myUser +":   " + content + "\n\n"));
+        Log.i("buffer", String.valueOf(messageBuffer));
+        message.setText("");
+        myThread.sendMessage(messageBuffer);
+
+   }
+
+   public String iterateLog(String addToLog){
+        this.log[logCounter] = addToLog;
+        String wholeLog = "";
+        int i=0;
+        logCounter++;
+        if(logCounter>=9){
+            logCounter=9;
+            while (i-1 < log.length) {
+                    wholeLog = String.join("", wholeLog, log[i+1]);
+                    i++;
+            }
+            wholeLog = String.join("",wholeLog,log[logCounter]);
+        }else {
+            while (i < log.length) {
+                if (log[i] != null) {
+                    wholeLog = String.join("", wholeLog, log[i]);
+                    i++;
+                } else {
+                    i++;
+                }
+            }
+        }
+        return wholeLog;
    }
 
 
