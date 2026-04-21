@@ -49,7 +49,6 @@ MyThread myThread;
         Socket socket;
 
         byte packetType;
-        byte[] timestamp = new byte[8];
         byte[] payloadLength = new byte[2];
         byte[] readPayloadLength = new byte[3];
         ByteBuffer handshakeBuffer;
@@ -70,7 +69,7 @@ MyThread myThread;
                 payloadLength[0] = readPayloadLength[1];
                 payloadLength[1] = readPayloadLength[2];
                 Log.i("Packet Type", String.valueOf((packetType)));
-                int payloadLengthInt = 2;
+                int payloadLengthInt = 3;
                 byte[] readPayload = new byte[payloadLengthInt];
                 dis.readFully(readPayload, 0, payloadLengthInt);
                 Log.i("Handshake Payload",(Arrays.toString(readPayload)));
@@ -97,6 +96,7 @@ MyThread myThread;
 
                 while(true){
                       if (dis.available() != 0) {
+                          Log.i("Avaible", String.valueOf(dis.available()));
                           packetType = dis.readByte();
                           if (packetType == 0x05) {
                               Log.i("Avaible", String.valueOf(dis.available()));
@@ -144,6 +144,9 @@ MyThread myThread;
                               dis.readFully(successRead, 0, 2);
                               Log.i("Success", Arrays.toString(successRead));
                           }
+                          else if(packetType==0x00){
+                              Log.i("masz kurwa problem?","Chuj");
+                          }
                       }
                 }
 
@@ -173,7 +176,7 @@ MyThread myThread;
    public void sendMessageButton(View v) {
        String content = "SolecKujawskijesttop";
        String myUser = "Jakub123@localhost";
-       String userToSend = "user2@localhost:9999";
+       String userToSend = "user2@localhost";
        ByteBuffer contentBuffer = p.encodeString(content);
        ByteBuffer myUserBuffer = p.encodeString(myUser);
        ByteBuffer userToSendBuffer = p.encodeString(userToSend);

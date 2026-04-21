@@ -50,9 +50,9 @@ public class Protocols {
     public ByteBuffer getHandshake(){
         ByteBuffer handshakeBuffer = ByteBuffer.allocate(1+2+1+1+1);
         handshakeBuffer.put((byte)0x03);
-        handshakeBuffer.putShort((short)2);
+        handshakeBuffer.putShort((short)3);
         handshakeBuffer.put((byte)0x00);
-        handshakeBuffer.put((byte)0x01);
+        handshakeBuffer.put((byte)0x02);
         handshakeBuffer.put((byte) 0x01);
         return handshakeBuffer;
     }
