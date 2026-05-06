@@ -26,7 +26,7 @@
         android:id="@+id/MessageLog"
         android:layout_width="300dp"
         android:layout_height="591dp"
-        android:layout_marginStart="80dp"
+        android:layout_marginStart="100dp"
         android:layout_marginTop="16dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -43,13 +43,47 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <TextView
-        android:id="@+id/ShowUsername"
-        android:layout_width="61dp"
-        android:layout_height="590dp"
-        android:layout_marginStart="13dp"
-        android:layout_marginTop="17dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <Button
+        android:id="@+id/User1Button"
+        android:layout_width="89dp"
+        android:layout_height="47dp"
+        android:layout_marginBottom="11dp"
+        android:onClick="UserButton"
+        android:text="user1"
+        app:layout_constraintBottom_toTopOf="@+id/User2Button"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/User2Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginBottom="13dp"
+        android:onClick="UserButton"
+        android:text="user2"
+        app:layout_constraintBottom_toTopOf="@+id/User3Button"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/User3Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="1dp"
+        android:layout_marginBottom="432dp"
+        android:onClick="UserButton"
+        android:text="user3"
+        app:layout_constraintBottom_toTopOf="@+id/Message"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/button5"
+        android:layout_width="92dp"
+        android:layout_height="55dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginBottom="13dp"
+        android:onClick="clear"
+        android:text="Button"
+        app:layout_constraintBottom_toTopOf="@+id/Message"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
