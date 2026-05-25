@@ -75,10 +75,19 @@ public class Protocols {
         message.put(timestamp);
         message.put(content);
         message.rewind();
-        for(int i=0; i<message.limit();i++){
-            Log.i("auth Authentication" + i, String.valueOf(message.get()));
-        }
         return message;
+    }
+    public ByteBuffer getJoinChannel(ByteBuffer user, ByteBuffer channelName, char mode){
+        int userLen = user.limit() - 2;
+        int channelLen = channelName.limit() -2;
+        ByteBuffer joinChannel = ByteBuffer.allocate(1+2+2+userLen+2+channelLen+1);
+        joinChannel.put((byte)0x07);
+        joinChannel.putShort((short) (2+user.limit()+2+channelName.limit()+1));
+        joinChannel.put(user);
+        joinChannel.put(channelName);
+        joinChannel.put((byte) mode);
+        joinChannel.rewind();
+        return joinChannel;
     }
 
 }

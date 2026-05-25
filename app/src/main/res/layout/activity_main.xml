@@ -2,10 +2,13 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
+    android:id="@+id/pop"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/lessBlack"
     tools:context=".MainActivity">
+
 
     <Button
         android:id="@+id/Login"
@@ -17,6 +20,7 @@
         android:layout_marginBottom="340dp"
         android:onClick="changeLayoutAfterLogin"
         android:text="@string/login"
+        android:background="@drawable/square_button"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.038"
@@ -35,6 +39,8 @@
         android:ems="10"
         android:hint="@string/password"
         android:inputType="textPassword"
+        android:textColor="@color/green"
+        android:textColorHint="@color/green"
         app:layout_constraintBottom_toTopOf="@+id/Login"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.233"
@@ -53,6 +59,8 @@
         android:ems="10"
         android:hint="@string/username"
         android:inputType="text"
+        android:textColor="@color/green"
+        android:textColorHint="@color/green"
         app:layout_constraintBottom_toTopOf="@+id/Password"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.225"
