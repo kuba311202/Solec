@@ -48,7 +48,6 @@ public class AfterLogin extends AppCompatActivity {
             this.username = extras.getString("login");
             this.password = extras.getString("pass");
         }
-        Log.i("login i pass1", username + " " + password);
         myThread = new MyThread();
         new Thread(myThread).start();
         message = findViewById(R.id.Message);
@@ -83,7 +82,7 @@ private class MyThread implements Runnable {
             dos.write(handshakeBuffer.array());
 
 
-            dos.write(sendAuth(username,password).array());
+            dos.write(sendAuth(username+"@localhost",password).array());
             Log.i("Authentication",("Authentication send"));
             Log.i("After Authentication", String.valueOf(dis.available()));
 
@@ -92,7 +91,6 @@ private class MyThread implements Runnable {
                     Log.i("Avaible", String.valueOf(dis.available()));
                     packetType = dis.readByte();
                     if (packetType == 0x05) {
-                        Log.i("Avaible", String.valueOf(dis.available()));
                         byte[] readAllLength = new byte[2];
                         dis.readFully(readAllLength, 0, 2);
                         byte[] readSenderLength = new byte[2];
@@ -101,7 +99,7 @@ private class MyThread implements Runnable {
                         byte[] readSender = new byte[readSenderLengthInt];
                         dis.readFully(readSender, 0, readSenderLengthInt);
                         String Sender = p.decodeBytesToString(readSender);
-                        Sender = Sender.substring(0,Sender.length()-5);
+                        Log.i("Sender", Sender);
 
                         byte[] readTargetLength = new byte[2];
                         dis.readFully(readTargetLength, 0, 2);
@@ -126,15 +124,17 @@ private class MyThread implements Runnable {
                         byte[] readMessage = new byte[readMessageLengthInt];
                         dis.readFully(readMessage, 0, readMessageLengthInt);
                         String Message = p.decodeBytesToString(readMessage);
-                        iterateLog(Sender + ":   " + Message + "\n\n",Sender);
+                        iterateLog(Sender + ":   " + Message + "\n\n",Sender,Target);
 
                     } else if (packetType == 0x01) {
                         byte[] successRead = new byte[2];
                         dis.readFully(successRead, 0, 2);
                         Log.i("Success", Arrays.toString(successRead));
                     }
-                    else if(packetType==0x00){
-
+                    else if(packetType==0x02){
+                        byte[] error = new byte[4];
+                        dis.readFully(error,0,4);
+                        Log.i("Error", Arrays.toString(error));
                     }
                 }
             }
@@ -240,7 +240,7 @@ public void sendMessageButton(View v) {
     userToSendBuffer.rewind();
     ByteBuffer messageBuffer = p.getMessage(myUserBuffer,userToSendBuffer,contentBuffer);
     messageBuffer.rewind();
-    iterateLog(myUser +":   " + content + "\n\n",myThread.getLogin());
+    iterateLog(myUser +":   " + content + "\n\n",myThread.getLogin(),userToSend);
     Log.i("buffer", String.valueOf(messageBuffer));
     message.setText("");
     myThread.sendMessage(messageBuffer);
@@ -280,8 +280,8 @@ public void addChannel(View v){
     PopUp.show();
 }
 
-public void joinChannel(String userName, View v){
-    userToSend = "#"+userName+"@localhost";
+public void joinUser(String userName, View v){
+    userToSend = userName+"@localhost";
     File file = new File(getApplicationContext().getFilesDir(),userToSend);
     if(!file.exists()){
         try {
@@ -304,7 +304,7 @@ public void joinChannel(String userName, View v){
     newButton.setOnClickListener(new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            ChannelButton(v);
+            UserButton(v);
         }
     });
     ConstraintLayout mainLayout = findViewById(R.id.after_log);
@@ -320,8 +320,8 @@ public void joinChannel(String userName, View v){
     constraintSet.applyTo(mainLayout);
 }
 
-public void joinUser(String channelName, View v){
-    String channel = channelName+"@localhost";
+public void joinChannel(String channelName, View v){
+    String channel = "#"+channelName+"@localhost";
     ByteBuffer myUser = p.encodeString(username+"@localhost");
     ByteBuffer chName = p.encodeString(channel);
     char mode = 1;
@@ -353,7 +353,7 @@ public void joinUser(String channelName, View v){
     newButton.setOnClickListener(new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            UserButton(v);
+            ChannelButton(v);
         }
     });
     ConstraintLayout mainLayout = findViewById(R.id.after_log);
@@ -369,14 +369,25 @@ public void joinUser(String channelName, View v){
     constraintSet.applyTo(mainLayout);
 }
 
-public void iterateLog(String addToLog, String Sender){
+public void iterateLog(String addToLog, String Sender, String Target){
     String wholeLog=" ";
     try {
         File path = getApplicationContext().getFilesDir();
         FileOutputStream writer = null;
         Log.i("Ścieżka i nazwa", userToSend + " " + Sender);
 
-        if(Sender == myThread.getLogin() || Sender.contentEquals(userToSend)) {
+        if(Target != myThread.getLogin()&& Sender != myThread.getLogin()) {
+            File readFrom = new File(path, Target);
+            byte[] content = new byte[(int) readFrom.length()];
+            FileInputStream fis = new FileInputStream(readFrom);
+            fis.read(content);
+            wholeLog = p.decodeBytesToString(content) + addToLog;
+            messageLog.setText(wholeLog);
+            writer = new FileOutputStream(new File(path, Target));
+            Log.i("Ścieżka i nazwa2", userToSend + " " + Sender);
+        }
+
+        else if(Sender == myThread.getLogin() || Sender.contentEquals(userToSend)) {
             File readFrom = new File(path,userToSend);
             byte[] content = new byte[(int) readFrom.length()];
             FileInputStream fis = new FileInputStream(readFrom);
@@ -387,8 +398,7 @@ public void iterateLog(String addToLog, String Sender){
             Log.i("Ścieżka i nazwa2", userToSend + " " + Sender);
         }
 
-        else{
-            if(!Sender.contentEquals(userToSend)){
+        else if(!Sender.contentEquals(userToSend)){
                 File readFrom = new File(path,Sender);
                 byte[] content = new byte[(int) readFrom.length()];
                 FileInputStream fis = new FileInputStream(readFrom);
@@ -396,7 +406,6 @@ public void iterateLog(String addToLog, String Sender){
                 wholeLog = p.decodeBytesToString(content) + addToLog;
                 writer = new FileOutputStream(new File(path, Sender));
                 Log.i("Ścieżka i nazwa3", userToSend + " " + Sender);
-            }
         }
         assert writer != null;
         writer.write(wholeLog.getBytes());

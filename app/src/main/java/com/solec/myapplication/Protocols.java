@@ -75,6 +75,7 @@ public class Protocols {
         message.put(timestamp);
         message.put(content);
         message.rewind();
+
         return message;
     }
     public ByteBuffer getJoinChannel(ByteBuffer user, ByteBuffer channelName, char mode){
