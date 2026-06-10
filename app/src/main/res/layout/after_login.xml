@@ -25,15 +25,25 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="1.0" />
 
-    <TextView
-        android:id="@+id/MessageLog"
+    <ScrollView
+        android:id="@+id/Scroll"
         android:layout_width="294dp"
         android:layout_height="590dp"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="14dp"
-        android:textColor="@color/white"
+        android:layout_marginEnd="10dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/MessageLog"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="14dp"
+            android:textColor="@color/white"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </ScrollView>
 
     <EditText
         android:id="@+id/Message"
@@ -50,22 +60,9 @@
         app:layout_constraintStart_toStartOf="parent" />
 
     <Button
-        android:id="@+id/button5"
-        android:layout_width="92dp"
-        android:layout_height="55dp"
-        android:layout_marginStart="4dp"
-        android:layout_marginBottom="13dp"
-        android:onClick="clear"
-        android:text="Clear"
-        android:background="@drawable/square_button"
-        app:layout_constraintBottom_toTopOf="@+id/Message"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <Button
         android:id="@+id/Add"
-        android:layout_width="95dp"
+        android:layout_width="88dp"
         android:layout_height="48dp"
-        android:layout_marginStart="4dp"
         android:layout_marginTop="16dp"
         android:background="@drawable/square_button"
         android:onClick="addChannel"

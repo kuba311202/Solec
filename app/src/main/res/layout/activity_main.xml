@@ -18,12 +18,12 @@
         android:layout_marginTop="343dp"
         android:layout_marginEnd="80dp"
         android:layout_marginBottom="340dp"
+        android:background="@drawable/square_button"
         android:onClick="changeLayoutAfterLogin"
         android:text="@string/login"
-        android:background="@drawable/square_button"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.038"
+        app:layout_constraintHorizontal_bias="0.04"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.0" />
@@ -67,5 +67,19 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.942" />
+
+    <EditText
+        android:id="@+id/chooseServer"
+        android:layout_width="151dp"
+        android:layout_height="54dp"
+        android:layout_marginStart="52dp"
+        android:layout_marginBottom="252dp"
+        android:ems="10"
+        android:hint="Server name"
+        android:inputType="text"
+        android:textColor="@color/green"
+        android:textColorHint="@color/green"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

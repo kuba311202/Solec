@@ -36,9 +36,10 @@ import java.util.Arrays;
 public class MainActivity extends AppCompatActivity {
     private EditText username;
     private EditText password;
-    int buttonCount;
+    private EditText chooseSerwer;
     String login;
     String pass;
+    String serverAddress;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,14 +48,18 @@ public class MainActivity extends AppCompatActivity {
         StrictMode.setThreadPolicy(policy);
         username = findViewById(R.id.Username);
         password = findViewById(R.id.Password);
+        chooseSerwer = findViewById(R.id.chooseServer);
     }
 
     public void changeLayoutAfterLogin(View view) {
         this.login = String.valueOf(username.getText());
         this.pass = String.valueOf(password.getText());
+        this.serverAddress = String.valueOf(chooseSerwer.getText());
+        Log.i("serverAdress1", serverAddress);
         Intent afterLogin = new Intent(getApplicationContext(),AfterLogin.class);
         afterLogin.putExtra("login",login);
         afterLogin.putExtra("pass",pass);
+        afterLogin.putExtra("server", serverAddress);
         startActivity(afterLogin);
     }
 }

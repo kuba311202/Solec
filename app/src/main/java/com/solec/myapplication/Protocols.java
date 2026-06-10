@@ -1,9 +1,14 @@
 package com.solec.myapplication;
 
 import android.util.Log;
+import android.util.TimeUtils;
 
 import java.nio.ByteBuffer;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalTime;
+import java.util.Calendar;
 
 public class Protocols {
 
@@ -23,6 +28,7 @@ public class Protocols {
         }
         return intToReturn;
     }
+
     public String decodeBytesToString(byte[] Bytes){
         int[] intTable = new int[Bytes.length];
         String[] stringTable = new String[Bytes.length];
@@ -47,6 +53,17 @@ public class Protocols {
         authBuffer.put(pass);
         return authBuffer;
     }
+    public ByteBuffer getHistory(ByteBuffer Address,long Timestamp,long count){
+        int AddressLen = Address.limit() - 2;
+        ByteBuffer historyBuffer = ByteBuffer.allocate(1+2+AddressLen+8+8+8);
+        historyBuffer.put((byte)0x08);
+        historyBuffer.putShort((short)(2+Address.remaining()+8+8+8));
+        historyBuffer.putLong(Timestamp);
+        historyBuffer.putLong(count);
+        historyBuffer.putLong(0);
+        historyBuffer.rewind();
+        return historyBuffer;
+    }
     public ByteBuffer getHandshake(){
         ByteBuffer handshakeBuffer = ByteBuffer.allocate(1+2+1+1+1);
         handshakeBuffer.put((byte)0x03);
@@ -55,6 +72,18 @@ public class Protocols {
         handshakeBuffer.put((byte)0x02);
         handshakeBuffer.put((byte) 0x01);
         return handshakeBuffer;
+    }
+    public ByteBuffer getList(){
+        ByteBuffer listBuffer = ByteBuffer.allocate(1+2+8+8);
+        listBuffer.put((byte)0x09);
+        listBuffer.putShort((short) 16);
+        listBuffer.putLong(20);
+        listBuffer.putLong(0);
+        return listBuffer;
+    }
+    public Instant getTimestamp(){
+        Calendar calendar = Calendar.getInstance();
+        return Instant.ofEpochMilli(calendar.getTimeInMillis());
     }
     public ByteBuffer getMessage(ByteBuffer source, ByteBuffer target, ByteBuffer content){
         int sourceLen = source.limit() - 2;
