@@ -50,22 +50,9 @@
         app:layout_constraintStart_toStartOf="parent" />
 
     <Button
-        android:id="@+id/button5"
-        android:layout_width="92dp"
-        android:layout_height="55dp"
-        android:layout_marginStart="4dp"
-        android:layout_marginBottom="13dp"
-        android:onClick="clear"
-        android:text="Clear"
-        android:background="@drawable/square_button"
-        app:layout_constraintBottom_toTopOf="@+id/Message"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <Button
         android:id="@+id/Add"
-        android:layout_width="95dp"
+        android:layout_width="88dp"
         android:layout_height="48dp"
-        android:layout_marginStart="4dp"
         android:layout_marginTop="16dp"
         android:background="@drawable/square_button"
         android:onClick="addChannel"
