@@ -52,7 +52,10 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
+import kotlin.text.Charsets;
+
 public class AfterLogin extends AppCompatActivity {
+    String wholeLog=" ";
     private String username;
     private String password;
     private String serverAddress;
@@ -96,6 +99,7 @@ private class MyThread implements Runnable {
     ByteBuffer handshakeBuffer;
     InputStream dis;
     DataOutputStream dos;
+    byte[] readMessage;
     @Override
     public void run() {
         try {
@@ -106,31 +110,25 @@ private class MyThread implements Runnable {
                 serverAddress = "localhost";
             }
 
-            Log.i("Connection", ("Connected to server"));
             dos = new DataOutputStream(socket.getOutputStream());
             dis = new DataInputStream(socket.getInputStream());
-            Log.i("stream",dis+" "+dos);
 
             dis.readNBytes(readPayloadLength, 0, 3);
             int payloadLengthInt = 3;
             byte[] readPayload = new byte[payloadLengthInt];
             dis.readNBytes(readPayload, 0, payloadLengthInt);
-            Log.i("Handshake Payload",(Arrays.toString(readPayload)));
 
             handshakeBuffer = p.getHandshake();
             dos.write(handshakeBuffer.array());
 
 
             dos.write(sendAuth(username+"@"+serverAddress,password).array());
-            Log.i("Authentication",("Authentication send"));
-            Log.i("After Authentication", String.valueOf(dis.available()));
 
             dos.write(p.getList().array());
 
             while(true){
                 if (!socket.isClosed()) {
                     dis.readNBytes(packetType,0,1);
-                    Log.i("pack", Arrays.toString(packetType));
                     if (packetType[0] == 0x05) {
                         byte[] readAllLength = new byte[2];
                         dis.readNBytes(readAllLength, 0, 2);
@@ -140,7 +138,6 @@ private class MyThread implements Runnable {
                         byte[] readSender = new byte[readSenderLengthInt];
                         dis.readNBytes(readSender, 0, readSenderLengthInt);
                         String Sender = p.decodeBytesToString(readSender);
-                        Log.i("Sender", Sender);
 
                         byte[] readTargetLength = new byte[2];
                         dis.readNBytes(readTargetLength, 0, 2);
@@ -148,21 +145,17 @@ private class MyThread implements Runnable {
                         byte[] readTarget = new byte[readTargetLengthInt];
                         dis.readNBytes(readTarget, 0, readTargetLengthInt);
                         String Target = p.decodeBytesToString(readTarget);
-                        Log.i("Target", Target);
-                        Log.i("ava", String.valueOf(dis.available()));
 
 
                         byte[] readTimestamp = new byte[8];
                         dis.readNBytes(readTimestamp, 0, 8);
                         Long Timestamp = ByteBuffer.wrap(readTimestamp).getLong();
                         Instant insTimestamp = Instant.ofEpochMilli(Timestamp);
-                        Log.i("Timestamp", Timestamp + "   " + insTimestamp);
 
                         byte[] readMessageLength = new byte[2];
                         dis.readNBytes(readMessageLength, 0, 2);
                         int readMessageLengthInt = p.decodeBytesToInt(readMessageLength);
-                        Log.i("len", String.valueOf(readMessageLengthInt));
-                        byte[] readMessage = new byte[readMessageLengthInt];
+                        readMessage = new byte[readMessageLengthInt];
                         dis.readNBytes(readMessage, 0, readMessageLengthInt);
                         String Message = p.decodeBytesToString(readMessage);
                         iterateLog(Sender + ":   " + Message + "\n\n",Sender,Target,insTimestamp);
@@ -170,12 +163,10 @@ private class MyThread implements Runnable {
                     } else if (packetType[0] == 0x01) {
                         byte[] successRead = new byte[2];
                         dis.readNBytes(successRead, 0, 2);
-                        Log.i("Success", Arrays.toString(successRead));
                     }
                     else if(packetType[0]==0x02){
                         byte[] error = new byte[4];
                         dis.readNBytes(error,0,4);
-                        Log.i("Error", Arrays.toString(error));
                     }
                     else if(packetType[0]==0x10){
                         byte[] readLength = new byte[2];
@@ -184,19 +175,29 @@ private class MyThread implements Runnable {
                         byte[] readAddress = new byte[readLengthInt];
                         dis.readNBytes(readAddress, 0, readLengthInt);
                         String Address = p.decodeBytesToString(readAddress);
-                        Log.i("Address", Address);
                         if(!Address.isEmpty()){
-                        Address = Address.substring(2);
-                        Log.i("AddressAfter", Address);
-                        if(Objects.equals(getLogin()+"@"+serverAddress, Address)){
-                        }
-                        else if(Address.charAt(0) == '#'){
-                            Address = Address.substring(1,Address.length()-9);
-                            joinChannel(Address);
-                        }else{
-                            Address = Address.substring(0,Address.length()-9);
-                            joinUser(Address);
-                        }
+                            try {
+                            Address = Address.substring(2);
+                            File file = new File(getApplicationContext().getFilesDir(), Address);
+                            FileOutputStream writer;
+                            File path = getApplicationContext().getFilesDir();
+                            if (file.exists()) {
+                                    writer = new FileOutputStream(new File(path, Address));
+                                    writer.write("".getBytes());
+                                    writer.close();
+                                }
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                            if(Objects.equals(getLogin()+"@"+serverAddress, Address)){
+                            }
+                            else if(Address.charAt(0) == '#'){
+                                Address = Address.substring(1,Address.length()-9);
+                                joinChannel(Address);
+                            }else{
+                                Address = Address.substring(0,Address.length()-9);
+                                joinUser(Address);
+                            }
                         }
                     }
                 }
@@ -217,7 +218,6 @@ private class MyThread implements Runnable {
     public void sendMessage(ByteBuffer code) {
         this.code = code;
         try {
-            Log.i("buffer", String.valueOf(code));
             dos.write(code.array());
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -254,18 +254,10 @@ public void UserButton(View v){
     } catch (Exception e) {
         throw new RuntimeException(e);
     }
-    if(lastLine != null && lastLine.length()<=24){
-        this.portion = lastLine.substring(lastLine.length()-24);
-        Log.i("p", portion);
-        this.TimestampLong = Instant.parse(portion).toEpochMilli();
-    }else{
-        this.TimestampLong = 0;
-    }
-    Log.i("time", String.valueOf(TimestampLong));
 
-    //myThread.sendMessage(p.getHistory(Address,TimestampLong,100));
+
     messageLog.setText("");
-
+    myThread.sendMessage(p.getHistory(Address,TimestampLong,100));
     File path = getApplicationContext().getFilesDir();
     File readFrom = new File(path,userToSend);
     byte[] content = new byte[(int) readFrom.length()];
@@ -286,7 +278,6 @@ public void ChannelButton(View v){
     Button b = (Button)v;
     this.userToSend = "#"+b.getText().toString()+"@"+serverAddress;
     ByteBuffer Address = p.encodeString(userToSend);
-
     try{
         File path = getApplicationContext().getFilesDir();
         File readFrom = new File(path,userToSend);
@@ -307,10 +298,8 @@ public void ChannelButton(View v){
         this.TimestampLong = 0;
     }
     Log.i("time", String.valueOf(TimestampLong));
-
-    //myThread.sendMessage(p.getHistory(Address,TimestampLong,100));
-
     messageLog.setText("");
+    myThread.sendMessage(p.getHistory(Address,TimestampLong,100));
     File path = getApplicationContext().getFilesDir();
     File readFrom = new File(path,userToSend);
     byte[] content = new byte[(int) readFrom.length()];
@@ -329,7 +318,8 @@ public void ChannelButton(View v){
 
 
 public void sendMessageButton(View v) {
-    String content = String.valueOf(message.getText());
+    String content = message.getText().toString();
+    Log.i("cont",content);
     String myUser = username;
     ByteBuffer contentBuffer = p.encodeString(content);
     ByteBuffer myUserBuffer = p.encodeString(username+"@"+serverAddress);
@@ -426,6 +416,7 @@ public void joinUser(String userName){
             buttonCount++;
             Log.i("username",userName);
             userToSend = userName + "@" + serverAddress;
+
             File file = new File(getApplicationContext().getFilesDir(), userToSend);
             if (!file.exists()) {
                 try {
@@ -434,6 +425,7 @@ public void joinUser(String userName){
 
                 }
             }
+
             Button newButton = new AppCompatButton(this);
             newButton.setText(userName);
             newButton.setId(View.generateViewId());
@@ -465,6 +457,7 @@ public void joinUser(String userName){
     }
 
 public void joinChannel(String channelName, View v){
+
     buttonCount++;
     String channel = "#"+channelName+"@"+serverAddress;
     ByteBuffer myUser = p.encodeString(username+"@"+serverAddress);
@@ -515,6 +508,7 @@ public void joinChannel(String channelName, View v){
 }
     public void joinChannel(String channelName){
         runOnUiThread(() -> {
+
             buttonCount++;
             String channel = "#" + channelName + "@" + serverAddress;
             ByteBuffer myUser = p.encodeString(username + "@" + serverAddress);
@@ -563,52 +557,77 @@ public void joinChannel(String channelName, View v){
         });
     }
 public void iterateLog(String addToLog, String Sender, String Target, Instant Timestamp){
-    String wholeLog=" ";
-    try {
-        File path = getApplicationContext().getFilesDir();
-        FileOutputStream writer = null;
-        Log.i("Ścieżka i nazwa", userToSend + " " + Sender + Target);
-        Log.i("nick", myThread.getLogin()+"@"+serverAddress);
 
-        if(!Objects.equals(Target, myThread.getLogin()+"@"+serverAddress) && !Objects.equals(Sender, myThread.getLogin()+"@"+serverAddress)) {
-            File readFrom = new File(path, Target);
-            byte[] content = new byte[(int) readFrom.length()];
-            FileInputStream fis = new FileInputStream(readFrom);
-            fis.read(content);
-            wholeLog = p.decodeBytesToString(content) + addToLog + Timestamp;
-            messageLog.setText(wholeLog);
-            writer = new FileOutputStream(new File(path, Target));
-            Log.i("Ścieżka i nazwa2", userToSend + " " + Sender);
-        }
-
-        else if(Sender == myThread.getLogin() + "@" +serverAddress || Sender.contentEquals(userToSend)) {
-            File readFrom = new File(path,userToSend);
-            byte[] content = new byte[(int) readFrom.length()];
-            FileInputStream fis = new FileInputStream(readFrom);
-            fis.read(content);
-            wholeLog = p.decodeBytesToString(content) + addToLog + Timestamp;
-            messageLog.setText(wholeLog);
-            writer = new FileOutputStream(new File(path, userToSend));
-            Log.i("Ścieżka i nazwa2", userToSend + " " + Sender);
-        }
-
-        else if(!Sender.contentEquals(userToSend)){
-                File readFrom = new File(path,Sender);
+    runOnUiThread(() -> {
+        try {
+            Date date = Date.from(Timestamp);
+            File path = getApplicationContext().getFilesDir();
+            FileOutputStream writer = null;
+            File readFrom = null;
+            Log.i("Ścieżka i nazwa", userToSend + " " + Sender + Target);
+            Log.i("nick", myThread.getLogin() + "@" + serverAddress);
+            if(Objects.equals(Target, myThread.getLogin())){
+                readFrom = new File(path, Sender);
                 byte[] content = new byte[(int) readFrom.length()];
                 FileInputStream fis = new FileInputStream(readFrom);
                 fis.read(content);
-                wholeLog = p.decodeBytesToString(content) + addToLog + Timestamp;
+                wholeLog = p.decodeBytesToString(content) + addToLog + android.text.format.DateFormat.getMediumDateFormat(this)
+                        .format(date)
+                        + " "
+                        + android.text.format.DateFormat.getTimeFormat(this)
+                        .format(date);
+                messageLog.setText(wholeLog);
+                writer = new FileOutputStream(new File(path, Target));
+                Log.i("Ścieżka i nazwa2", userToSend + " " + Sender);
+            }
+            else if (!Objects.equals(Target, myThread.getLogin() + "@" + serverAddress) && !Objects.equals(Sender, myThread.getLogin() + "@" + serverAddress)) {
+                readFrom = new File(path, Target);
+                byte[] content = new byte[(int) readFrom.length()];
+                FileInputStream fis = new FileInputStream(readFrom);
+                fis.read(content);
+                wholeLog = p.decodeBytesToString(content) + addToLog + android.text.format.DateFormat.getMediumDateFormat(this)
+                        .format(date)
+                        + " "
+                        + android.text.format.DateFormat.getTimeFormat(this)
+                        .format(date);
+                messageLog.setText(wholeLog);
+                writer = new FileOutputStream(new File(path, Target));
+                Log.i("Ścieżka i nazwa2", userToSend + " " + Sender);
+            } else if (Objects.equals(Sender, myThread.getLogin() + "@" + serverAddress) || Sender.contentEquals(userToSend)) {
+                readFrom = new File(path, userToSend);
+                byte[] content = new byte[(int) readFrom.length()];
+                FileInputStream fis = new FileInputStream(readFrom);
+                fis.read(content);
+                wholeLog = p.decodeBytesToString(content) + addToLog + android.text.format.DateFormat.getMediumDateFormat(this)
+                        .format(date)
+                        + " "
+                        + android.text.format.DateFormat.getTimeFormat(this)
+                        .format(date);
+                messageLog.setText(wholeLog);
+                writer = new FileOutputStream(new File(path, userToSend));
+                Log.i("Ścieżka i nazwa2", userToSend + " " + Sender);
+            } else if (!Sender.contentEquals(userToSend)) {
+                readFrom = new File(path, Sender);
+                byte[] content = new byte[(int) readFrom.length()];
+                FileInputStream fis = new FileInputStream(readFrom);
+                fis.read(content);
+                wholeLog = p.decodeBytesToString(content) + addToLog + android.text.format.DateFormat.getMediumDateFormat(this)
+                        .format(date)
+                        + " "
+                        + android.text.format.DateFormat.getTimeFormat(this)
+                        .format(date);
                 writer = new FileOutputStream(new File(path, Sender));
                 Log.i("Ścieżka i nazwa3", userToSend + " " + Sender);
-        }
-        assert writer != null;
-        writer.write((wholeLog+"\n").getBytes());
-        writer.close();
+            }
 
-    }
-    catch (Exception e) {
-        throw new RuntimeException(e);
-    }
+            assert writer != null;
+            writer.write((wholeLog + "\n").getBytes(Charsets.UTF_8));
+            writer.close();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    });
 
 }
 
