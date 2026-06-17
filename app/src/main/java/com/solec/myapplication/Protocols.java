@@ -43,7 +43,6 @@ public class Protocols {
     public ByteBuffer getHistory(ByteBuffer Address,long Timestamp,long count){
         int AddressLen = Address.limit() - 2;
         Address.rewind();
-        Log.i("addresss", String.valueOf(Address)+AddressLen);
         ByteBuffer historyBuffer = ByteBuffer.allocate(1+2+2+AddressLen+8+8+8);
         historyBuffer.put((byte)0x08);
         historyBuffer.putShort((short)(2+AddressLen+8+8+8));
@@ -51,12 +50,6 @@ public class Protocols {
         historyBuffer.putLong(Timestamp);
         historyBuffer.putLong(count);
         historyBuffer.putLong(0);
-        for(int i =0;i<historyBuffer.limit();i++) {
-            Log.i("Historia", String.valueOf(historyBuffer.get(i)));
-        }
-        for(int i =0;i<Address.limit();i++){
-            Log.i("Nickname", String.valueOf(Address.get(i)));
-        }
         return historyBuffer;
     }
     public ByteBuffer getHandshake(){

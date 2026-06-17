@@ -30,7 +30,7 @@
 
     <EditText
         android:id="@+id/Password"
-        android:layout_width="150dp"
+        android:layout_width="175dp"
         android:layout_height="50dp"
         android:layout_marginStart="48dp"
         android:layout_marginTop="260dp"
@@ -50,11 +50,10 @@
 
     <EditText
         android:id="@+id/Username"
-        android:layout_width="150dp"
+        android:layout_width="175dp"
         android:layout_height="50dp"
         android:layout_marginStart="48dp"
         android:layout_marginTop="95dp"
-        android:layout_marginEnd="181dp"
         android:layout_marginBottom="48dp"
         android:ems="10"
         android:hint="@string/username"
@@ -62,20 +61,18 @@
         android:textColor="@color/green"
         android:textColorHint="@color/green"
         app:layout_constraintBottom_toTopOf="@+id/Password"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.225"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.942" />
 
     <EditText
         android:id="@+id/chooseServer"
-        android:layout_width="151dp"
+        android:layout_width="175dp"
         android:layout_height="54dp"
         android:layout_marginStart="52dp"
         android:layout_marginBottom="252dp"
         android:ems="10"
-        android:hint="Server name"
+        android:hint="@string/server_name"
         android:inputType="text"
         android:textColor="@color/green"
         android:textColorHint="@color/green"
