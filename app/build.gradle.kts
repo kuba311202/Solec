@@ -3,6 +3,9 @@ plugins {
 }
 
 android {
+    defaultConfig {
+        multiDexEnabled = true
+    }
     namespace = "com.solec.myapplication"
     compileSdk {
         version = release(36)
@@ -10,7 +13,7 @@ android {
 
     defaultConfig {
         applicationId = "com.solec.myapplication"
-        minSdk = 36
+        minSdk = 33
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -30,6 +33,8 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        encoding = "UTF-8"
+
     }
 }
 
